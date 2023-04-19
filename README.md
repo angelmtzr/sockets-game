@@ -23,7 +23,7 @@ Distributed under the MIT License.
 <!-- CONTACT -->
 ## Contact
 
-1. Edgar Velazquez Mercado - 0217557
-2. Ángel Martinez - 0235347
-3. José Iván Andrade Rojas - 0210669
-4. Raschid Llamas Aun - 0238166
+1. Edgar Velazquez Mercado - 0217557@up.edu.mx
+2. Ángel Martinez - 0235347@up.edu.mx
+3. José Iván Andrade Rojas - 0210669@up.edu.mx
+4. Raschid Llamas Aun - 0238166@up.edu.mx
