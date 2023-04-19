@@ -10,9 +10,8 @@ To get a local copy up and running follow this simple steps.
 
 1. Download the whole project as a ZIP file or with your favorite method
 2. Setup the enviroment with the latest one and make sure you have Pygame installed
-3.
 
-### Prerequisites
+## Prerequisites
 
 The only prerequisites for this project is to have a Python distribution up to 3.9.16 and newer versions
 
@@ -24,7 +23,7 @@ Distributed under the MIT License.
 <!-- CONTACT -->
 ## Contact
 
-Edgar Velazquez Mercado - 0217557
-Ángel Martinez - 0235347
-José Iván Andrade Rojas - 0210669
-Raschid Llamas Aun - 0238166
+1. Edgar Velazquez Mercado - 0217557
+2. Ángel Martinez - 0235347
+3. José Iván Andrade Rojas - 0210669
+4. Raschid Llamas Aun - 0238166
