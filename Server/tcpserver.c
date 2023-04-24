@@ -24,6 +24,8 @@
 #define  PUERTO   5006		/* numero puerto arbitrario */
 #define  jsonSIZE  10000
 #define  msgSIZE   2048      /* longitud maxima parametro entrada/salida */
+
+void initGameConnect4(int ,int );
    
 
 int                  sd, sd_actual;  /* descriptores de sockets */
@@ -43,6 +45,7 @@ void aborta_handler(int sig){
 
 int main(){
 
+	int client1,client2;
 	char usernameOne[] = "player1";
 	char passwordOne[] = "password1";
 	char usernameTwo[] = "player2";
@@ -52,10 +55,12 @@ int main(){
 	int clientsLimit = 2; // Limite de clientes que acepta el servidor.
 	int contClients = 0;  // Clientes conectados al momento.
 	pid_t child_pid;
+	
+	int playerOneFlag = 0;
+	int playerTwoFlag = 0;
+
 	int mainProcess = getpid(); //ID del proceso principal.
 	char  msg[msgSIZE];	     /* parametro entrada y salida */
-
-	char  json[jsonSIZE];	
 
 	/*
 	When the user presses <Ctrl + C>, the aborta_handler function will be called, 
@@ -71,7 +76,7 @@ int main(){
 
 /* obtencion de un socket tipo internet */
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket");
+		perror("[-] Could not create socket\n");
 		exit(1);
 	}
 
@@ -88,109 +93,158 @@ int main(){
 			
 
 /* ponerse a escuchar a traves del socket */
-	if (listen(sd, 5) == -1) {
-		perror("listen");
+	if (listen(sd, 6) != 0) {
+		perror("[-]Error in binding.\n");
 		exit(1);
-	}		
+	}else{
+		printf("[+]Listening...\n");
+	}
 
+	
 /* esperando que un cliente solicite un servicio */
 
-	for(;;){
-			if ((sd_actual = accept(sd, (struct sockaddr *)&pin, &addrlen)) == -1) {
-				perror("accept");
-				exit(1);
-			}else if(mainProcess == getpid() && contClients < clientsLimit){
-				child_pid = fork();
-				contClients++;	
-			}
-		
-		if(child_pid == 0){
-			int authFlag = 0;
-			char delimiter[] = " ";
-			char userReceived[msgSIZE];
-			char passwordReceived[msgSIZE];
-			char sendAuth[msgSIZE];
 
-			char sigue='S';
-			char msgReceived[1000];
-
-			strcpy(json," ");
-
-			while(!authFlag){
-				if (recv(sd_actual, msg, sizeof(msg), 0) == -1){
-					perror("recv");
-					exit(1);
-				}
-				char *ptr = strtok(msg, delimiter);
-
-				if(ptr != NULL){
-					strcpy(userReceived, ptr);
-					ptr = strtok(NULL, delimiter);
-					strcpy(passwordReceived, ptr);
-				}
-
-				printf("Auth Flag: %d\n", authFlag);
-				printf("%s\n%s\n", userReceived, passwordReceived);
-				
-				if(!strcmp(usernameOne, userReceived) && !strcmp(passwordOne, passwordReceived)){
-					strcpy(sendAuth, "1 1");
-					if (send(sd_actual, sendAuth, strlen(sendAuth), 0) == -1) {
-						perror("send");
-						exit(1);
-					}
-					authFlag = 1;
-				}else if(!strcmp(usernameTwo, userReceived) && !strcmp(passwordTwo, passwordReceived)){
-					strcpy(sendAuth, "1 2");
-					if (send(sd_actual, sendAuth, strlen(sendAuth), 0) == -1) {
-						perror("send");
-						exit(1);
-					}
-					authFlag = 1;
-				}else{
-					strcpy(sendAuth, "0 0");
-					printf("Cliente ingreso datos incorrectos.\n");
-					if (send(sd_actual, sendAuth, strlen(sendAuth), 0) == -1) {
-						perror("send");
-						exit(1);
-					}
-				}
-			}
-			
-			while(sigue=='S'){				
-				/* tomar un mensaje del cliente */
-
-				int n = recv(sd_actual, msg, sizeof(msg), 0);
-				if (n == -1) {
-					perror("recv");
-					exit(1);
-				}		
-				//msg[n] = '\0';
-				printf("Client sent: %s \n", msg);
-
-				if((strcmp(msg,"close")==0)){ //it means that the conversation must be closed
-					sigue='N';
-				}else{
-					//convert msg received to json format
-					strcpy(msgReceived,"{'");
-					strcat(msgReceived,msg);
-					strcat(msgReceived,"' : '");
-					strcat(msgReceived,msg);
-					strcat(msgReceived,"'},");
-					strcat(json,msgReceived);
-					//----------------------------------
-				}
-					
-			}
-
-			if (send(sd_actual, json, strlen(json), 0) == -1) {
-				perror("send");
-				exit(1);
-			}
-		}
-	}
+	while(1){
+	 	client1 = accept(sd, (struct sockaddr *)&pin,&addrlen);
+	 	printf("Player 1 joined ...\n");
+	 	client2 = accept(sd, (struct sockaddr *)&pin,&addrlen);
+	 	printf("Player 2 joined ...\n");
+		if(fork()==0)
+			initGameConnect4(client1, client2);
+	 }
 
 	close(sd_actual);  
    	close(sd);
    	printf("Conexion cerrada\n");
 	return 0;
+}
+
+
+void initGameConnect4(int client1, int client2){
+	char  msg[msgSIZE];	     /* parametro entrada y salida */
+
+	int authFlagOne = 0;
+	int authFlagTwo = 0;
+
+	char delimiter[] = " ";
+	char userReceived[msgSIZE];
+	char passwordReceived[msgSIZE];
+	char sendAuth[msgSIZE];
+	char initGame[] = "1";
+	int playerOneFlag = 0;
+	int playerTwoFlag = 0;
+
+	char usernameOne[] = "edgar";
+	char passwordOne[] = "contra1";
+	char usernameTwo[] = "anapau";
+	char passwordTwo[] = "contra2";
+
+	if (send(client1, "Jugador 2 ingreso.", 18, 0) == -1) {
+		perror("send");
+		exit(1);
+	}
+	if (send(client2, "Jugador 1 ya ha ingresado.", 26, 0) == -1) {
+		perror("send");
+		exit(1);
+	}
+
+	while(!authFlagOne){
+		if (recv(client1, msg, sizeof(msg), 0) == -1){
+				perror("recv");
+				exit(1);
+		}
+		char *ptr = strtok(msg, delimiter);
+
+		if(ptr != NULL){
+			strcpy(userReceived, ptr);
+			ptr = strtok(NULL, delimiter);
+			strcpy(passwordReceived, ptr);
+		}
+
+		if(!strcmp(usernameOne, userReceived) && !strcmp(passwordOne, passwordReceived)){
+			strcpy(sendAuth, "1");
+			if (send(client1, sendAuth, strlen(sendAuth), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			printf("Jugador uno autenticado. \n");
+			authFlagOne = 1;
+			playerOneFlag = 1;
+
+		}else if(!strcmp(usernameTwo, userReceived) && !strcmp(passwordTwo, passwordReceived)){
+			strcpy(sendAuth, "1");
+			if (send(client1, sendAuth, strlen(sendAuth), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			printf("Jugador uno autenticado. \n");
+			authFlagOne = 1;
+			playerOneFlag = 1;
+
+		}else{
+			strcpy(sendAuth, "0");
+			printf("Cliente ingreso datos incorrectos.\n");
+			if (send(client1, sendAuth, strlen(sendAuth), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+		}
+
+	}
+	
+	while(!authFlagTwo){
+		if (recv(client2, msg, sizeof(msg), 0) == -1){
+				perror("recv");
+				exit(1);
+		}
+		char *ptr = strtok(msg, delimiter);
+
+		if(ptr != NULL){
+			strcpy(userReceived, ptr);
+			ptr = strtok(NULL, delimiter);
+			strcpy(passwordReceived, ptr);
+		}
+
+		if(!strcmp(usernameOne, userReceived) && !strcmp(passwordOne, passwordReceived)){
+			strcpy(sendAuth, "1");
+			if (send(client2, sendAuth, strlen(sendAuth), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			printf("Jugador dos autenticado. \n");
+			authFlagTwo = 1;
+			playerTwoFlag = 1;
+
+		}else if(!strcmp(usernameTwo, userReceived) && !strcmp(passwordTwo, passwordReceived)){
+			strcpy(sendAuth, "1");
+			if (send(client2, sendAuth, strlen(sendAuth), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			printf("Jugador dos autenticado. \n");
+			authFlagTwo = 1;
+			playerTwoFlag = 1;
+
+		}else{
+			strcpy(sendAuth, "0");
+			printf("Cliente ingreso datos incorrectos.\n");
+			if (send(client2, sendAuth, strlen(sendAuth), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+		}
+
+	}
+
+	if(playerOneFlag == 1 && playerTwoFlag == 1){
+		printf("Inicia juego.\n");
+		if (send(client1, initGame, strlen(initGame), 0) == -1) {
+			perror("send");
+			exit(1);
+		}
+		if (send(client2, initGame, strlen(initGame), 0) == -1) {
+			perror("send");
+			exit(1);
+		}
+	}
 }
