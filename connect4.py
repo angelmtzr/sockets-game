@@ -2,14 +2,10 @@ import pygame, sys
 import numpy as np
 import math
 
+#Counters
 SQUARESIZE = 100
 ROW_COUNT = 6
 COLUMN_COUNT = 7
-
-#Define width and height of board
-width = COLUMN_COUNT * SQUARESIZE
-height = (ROW_COUNT+1) * SQUARESIZE
-RADIUS = int(SQUARESIZE/2 - 5)
 
 #COLORES
 BLUE = (0, 0, 255)
@@ -20,22 +16,24 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 
-
+#Create array of zeros (Our Board)
 def create_board():
     board = np.zeros((ROW_COUNT,COLUMN_COUNT))
     return board
  
+#Check if we can drop a piece
 def drop_piece(board, row, col, piece):
     board[row][col] = piece
  
+#Is dropping a circle valid?
 def is_valid_location(board, col):
     return board[ROW_COUNT-1][col] == 0
- 
+
 def get_next_open_row(board, col):
     for r in range(ROW_COUNT):
         if board[r][col] == 0:
             return r
- 
+
 def print_board(board):
     print(np.flip(board, 0))
     
@@ -43,30 +41,31 @@ board = create_board()
 print_board(board)
  
 def winning_move(board, piece):
-    # Check horizontal locations for win
+    #Check horizontal locations
     for c in range(COLUMN_COUNT-3):
         for r in range(ROW_COUNT):
             if board[r][c] == piece and board[r][c+1] == piece and board[r][c+2] == piece and board[r][c+3] == piece:
                 return True
  
-    # Check vertical locations for win
+    #Check vertical locations
     for c in range(COLUMN_COUNT):
         for r in range(ROW_COUNT-3):
             if board[r][c] == piece and board[r+1][c] == piece and board[r+2][c] == piece and board[r+3][c] == piece:
                 return True
  
-    # Check positively sloped diaganols
+    #Check positively sloped diagonals
     for c in range(COLUMN_COUNT-3):
         for r in range(ROW_COUNT-3):
             if board[r][c] == piece and board[r+1][c+1] == piece and board[r+2][c+2] == piece and board[r+3][c+3] == piece:
                 return True
  
-    # Check negatively sloped diaganols
+    #Check negatively sloped diagonals
     for c in range(COLUMN_COUNT-3):
         for r in range(3, ROW_COUNT):
             if board[r][c] == piece and board[r-1][c+1] == piece and board[r-2][c+2] == piece and board[r-3][c+3] == piece:
                 return True
- 
+            
+#Draw Circles on the board
 def draw_board(board):
     for c in range(COLUMN_COUNT):
         for r in range(ROW_COUNT):
@@ -82,7 +81,6 @@ def draw_board(board):
     pygame.display.update()
 
 class Button:
-
 	def __init__(self, text, width, height, pos, elevation):
 		#Core attributes
 		self.pressed = False
@@ -131,10 +129,13 @@ class Button:
 			self.top_color = RED
                         
 
+#Game Over Flag and Turn Counter
 game_over = False
 turn = 0
 
 pygame.init()
+
+#Setup
 SQUARESIZE = 100
 width = COLUMN_COUNT * SQUARESIZE
 height = (ROW_COUNT+1) * SQUARESIZE
@@ -143,16 +144,18 @@ RADIUS = int(SQUARESIZE/2 - 5)
 screen = pygame.display.set_mode(size)
 draw_board(board)
 pygame.display.update()
+
+#Fonts and Buttons
 gui_font = pygame.font.Font(None,20)
 buttons_array = [Button('FICHA', 50, 30, (10+i, 20), 5) for i in range(0, 490, 70)]
 
 
 while not game_over:
- 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
- 
+
+		#Draw Circles
         if event.type == pygame.MOUSEMOTION:
             pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
             posx = event.pos[0]
@@ -160,10 +163,13 @@ while not game_over:
                 pygame.draw.circle(screen, RED, (posx, int(SQUARESIZE/2)), RADIUS)
             else: 
                 pygame.draw.circle(screen, YELLOW, (posx, int(SQUARESIZE/2)), RADIUS)
+                
         pygame.display.update()
  
         if event.type == pygame.MOUSEBUTTONDOWN:
             pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
+            
+			#Ask for Player 1 INPUT
             if turn == 0:
                 posx = event.pos[0]
                 col = int(math.floor(posx/SQUARESIZE))
@@ -176,7 +182,8 @@ while not game_over:
                         label = gui_font.render("Player 1 wins!!", 1, RED)
                         screen.blit(label, (40,10))
                         game_over = True
- 
+                        
+			#Ask for Player 2 INPUT
             else:               
                 posx = event.pos[0]
                 col = int(math.floor(posx/SQUARESIZE))
