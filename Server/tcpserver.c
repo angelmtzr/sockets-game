@@ -122,22 +122,29 @@ int main(){
 
 void initGameConnect4(int client1, int client2){
 	char  msg[msgSIZE];	     /* parametro entrada y salida */
+	char column[msgSIZE];
 
-	int authFlagOne = 0;
-	int authFlagTwo = 0;
+	char usernameOne[] = "cliente1";
+	char passwordOne[] = "contra1";
+	
+	char usernameTwo[] = "cliente2";
+	char passwordTwo[] = "contra2";
 
 	char delimiter[] = " ";
 	char userReceived[msgSIZE];
 	char passwordReceived[msgSIZE];
 	char sendAuth[msgSIZE];
 	char initGame[] = "1";
+	int authFlagOne = 0;
+	int authFlagTwo = 0;
 	int playerOneFlag = 0;
 	int playerTwoFlag = 0;
 
-	char usernameOne[] = "edgar";
-	char passwordOne[] = "contra1";
-	char usernameTwo[] = "anapau";
-	char passwordTwo[] = "contra2";
+	int board[6][7];
+	memset(board, 0, sizeof(board));
+
+	int turn = 1;
+
 
 	if (send(client1, "Jugador 2 ingreso.", 18, 0) == -1) {
 		perror("send");
@@ -246,5 +253,35 @@ void initGameConnect4(int client1, int client2){
 			perror("send");
 			exit(1);
 		}
+	}
+
+	while(1){
+		
+		if(turn%2 != 0){
+			sleep(1);
+			if (send(client1, "Es tu turno", 11, 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			if (recv(client1, column, sizeof(column), 0) == -1){
+				perror("recv");
+				exit(1);
+			}
+			printf("Player 1 pressed: %s\n",column);
+		}else{
+			sleep(2);
+			if (send(client2, "Es tu turno", 11, 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			if (recv(client2, column, sizeof(column), 0) == -1){
+				perror("recv");
+				exit(1);
+			}
+			printf("Player 2 pressed: %s\n",column);
+		}
+
+
+		turn++;
 	}
 }
