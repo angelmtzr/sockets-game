@@ -21,15 +21,28 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 
+def create_board():
+    board = np.zeros((ROW_COUNT,COLUMN_COUNT))
+    return board
+
+def is_valid_location(board, col):
+    return board[ROW_COUNT-1][col] == 0
+
+def get_next_open_row(board, col):
+    for r in range(ROW_COUNT):
+        if board[r][col] == 0:
+            return r
 
 class Button:
 
-	def __init__(self, text, width, height, pos, elevation):
+	def __init__(self, text, width, height, pos,column, elevation):
 		#Core attributes
 		self.pressed = False
+		self.column = column
 		self.elevation = elevation
 		self.dynamic_elecation = elevation
 		self.original_y_pos = pos[1]
+		
 
 		#Top rect
 		self.top_rect = pygame.Rect(pos,(width,height))
@@ -65,7 +78,13 @@ class Button:
 			else:
 				self.dynamic_elecation = self.elevation
 				if self.pressed == True:
-					print('click')
+					col = int(self.column)
+					if is_valid_location(board, col):
+						row = row = get_next_open_row(board, col)
+
+					player_response = str(col)+" "+str(row)
+					s.sendall(player_response.encode("utf-8"))
+					click = False
 					self.pressed = False
 		else:
 			self.dynamic_elecation = self.elevation
@@ -132,25 +151,34 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     size = (490, 490)
     screen = pygame.display.set_mode(size)
     gui_font = pygame.font.Font(None,20)
-    buttons_array = [Button('FICHA', 50, 30, (10+i, 20), 5) for i in range(0, 490, 70)]
+    buttons_array = [Button('FICHA', 50, 30, (10+i, 20),i/70, 5) for i in range(0, 490, 70)]
+    board = create_board()
+    click = True
 
 
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
 
-        screen.fill(WHITE)
+        turn = s.recv(1024).decode('iso-8859-1')
+        click = True
+        print(turn)
 
-        for button in buttons_array:
-            button.draw()
+        while click:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            
+            screen.fill(WHITE)
 
-        pygame.draw.rect(screen, BLUE, (0, 70, 490, 420))
-        for i in range(0, 420, 70):
-            for j in range(0, 490, 70):
-                pygame.draw.circle(screen, WHITE, (35 + j, 105 + i), 30)
+            for button in buttons_array:
+                button.draw()
 
-        pygame.display.update()
+            pygame.draw.rect(screen, BLUE, (0, 70, 490, 420))
+
+            for i in range(0, 420, 70):
+                for j in range(0, 490, 70):
+                    pygame.draw.circle(screen, WHITE, (35 + j, 105 + i), 30)
+
+            pygame.display.update()
 
     s.close()
