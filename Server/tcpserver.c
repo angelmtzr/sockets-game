@@ -26,12 +26,12 @@
 #define  msgSIZE   2048      /* longitud maxima parametro entrada/salida */
 
 void initGameConnect4(int ,int );
+int check_winner(int board[6][7]);
    
 
 int                  sd, sd_actual;  /* descriptores de sockets */
 int                  addrlen;        /* longitud direcciones */
 struct sockaddr_in   sind, pin;      /* direcciones sockets cliente u servidor */
-
 
 /*  procedimiento de aborte del servidor, si llega una senal SIGINT */
 /* ( <ctrl> <c> ) se cierra el socket y se aborta el programa       */
@@ -122,7 +122,10 @@ int main(){
 
 void initGameConnect4(int client1, int client2){
 	char  msg[msgSIZE];	     /* parametro entrada y salida */
-	char column[msgSIZE];
+	char tokenPositionOne[msgSIZE];
+	char tokenPositionTwo[msgSIZE];
+	char opMove[msgSIZE];
+	char turnStr[msgSIZE];
 
 	char usernameOne[] = "cliente1";
 	char passwordOne[] = "contra1";
@@ -141,6 +144,11 @@ void initGameConnect4(int client1, int client2){
 	int playerTwoFlag = 0;
 
 	int board[6][7];
+	int winner;
+	char columnReceived[msgSIZE];
+	char rowReceived[msgSIZE];
+	int row = 0;
+	int column = 0;
 	memset(board, 0, sizeof(board));
 
 	int turn = 1;
@@ -256,32 +264,141 @@ void initGameConnect4(int client1, int client2){
 	}
 
 	while(1){
-		
+		sprintf(turnStr, "%d", turn);
+		printf("\nTurn %d\n",turn);
 		if(turn%2 != 0){
 			sleep(1);
-			if (send(client1, "Es tu turno", 11, 0) == -1) {
+			//send tokenPositionTwo only if turn > 1
+			if (send(client1, turnStr, strlen(turnStr), 0) == -1) {
 				perror("send");
 				exit(1);
 			}
-			if (recv(client1, column, sizeof(column), 0) == -1){
+			if(turn > 1){
+				sleep(1);
+				if (send(client1, opMove, strlen(opMove), 0) == -1) {
+					perror("send");
+					exit(1);
+				}
+			}
+			if (recv(client1, tokenPositionOne, sizeof(tokenPositionOne), 0) == -1){
 				perror("recv");
 				exit(1);
 			}
-			printf("Player 1 pressed: %s\n",column);
+			strcpy(opMove, tokenPositionOne);
+
+			char *ptr = strtok(tokenPositionOne, delimiter);
+
+			if(ptr != NULL){
+				strcpy(columnReceived, ptr);
+				ptr = strtok(NULL, delimiter);
+				strcpy(rowReceived, ptr);
+			}
+			row = atoi(rowReceived);
+			column = atoi(columnReceived);
+
+			printf("Player 1 pressed: Row %d Column %d\n", row+1, column+1);
+
+			board[5 - row][column] = 1;
 		}else{
-			sleep(2);
-			if (send(client2, "Es tu turno", 11, 0) == -1) {
+			sleep(1);	
+			// send tokenPositionOne
+			if (send(client2, turnStr, strlen(turnStr), 0) == -1) {
 				perror("send");
 				exit(1);
 			}
-			if (recv(client2, column, sizeof(column), 0) == -1){
+			sleep(1);
+			if (send(client2, opMove, strlen(opMove), 0) == -1) {
+				perror("send");
+				exit(1);
+			}
+			if (recv(client2, tokenPositionTwo, sizeof(tokenPositionTwo), 0) == -1){
 				perror("recv");
 				exit(1);
 			}
-			printf("Player 2 pressed: %s\n",column);
+			strcpy(opMove, tokenPositionTwo);
+			
+			char *ptr = strtok(tokenPositionTwo, delimiter);
+
+			if(ptr != NULL){
+				strcpy(columnReceived, ptr);
+				ptr = strtok(NULL, delimiter);
+				strcpy(rowReceived, ptr);
+			}
+			row = atoi(rowReceived);
+			column = atoi(columnReceived);
+
+			printf("Player 2 pressed: Row %d Column %d\n", row+1, column+1);
+
+			board[5 - row][column] = 2;
 		}
 
+		printf("Board: \n");
+		for (int i = 0; i < 6; i++) {
+    		for (int j = 0; j < 7; j++) {
+      			printf("%d ", board[i][j]);
+    		}
+    		printf("\n");
+  		}
+		winner = check_winner(board);
+		if(winner == 1)
+			printf("Player one with red tokens wins!\n");
+
+		else if(winner == 2)
+			printf("Player two with yellow tokens wins!\n");
 
 		turn++;
 	}
+}
+
+int check_winner(int board[6][7]){
+  // Check for horizontal wins
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 4; j++) {
+      if (board[i][j] == board[i][j+1] &&
+          board[i][j] == board[i][j+2] &&
+          board[i][j] == board[i][j+3] &&
+          board[i][j] != 0) {
+        return board[i][j];
+      }
+    }
+  }
+
+  // Check for vertical wins
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 7; j++) {
+      if (board[i][j] == board[i+1][j] &&
+          board[i][j] == board[i+2][j] &&
+          board[i][j] == board[i+3][j] &&
+          board[i][j] != 0) {
+        return board[i][j];
+      }
+    }
+  }
+
+  // Check for diagonal wins (top-left to bottom-right)
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 4; j++) {
+      if (board[i][j] == board[i+1][j+1] &&
+          board[i][j] == board[i+2][j+2] &&
+          board[i][j] == board[i+3][j+3] &&
+          board[i][j] != 0) {
+        return board[i][j];
+      }
+    }
+  }
+
+  // Check for diagonal wins (bottom-left to top-right)
+  for (int i = 3; i < 6; i++) {
+    for (int j = 0; j < 4; j++) {
+      if (board[i][j] == board[i-1][j+1] &&
+          board[i][j] == board[i-2][j+2] &&
+          board[i][j] == board[i-3][j+3] &&
+          board[i][j] != 0) {
+        return board[i][j];
+      }
+    }
+  }
+
+  // No winner found
+  return 0;
 }
